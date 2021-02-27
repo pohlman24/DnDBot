@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 bot = commands.Bot(command_prefix="!")
+# Todo make a !help command to print all the available commands 
 @bot.event
 async def on_ready():
     print("Logged in as")
@@ -16,19 +17,16 @@ async def on_ready():
 
 @bot.command()
 async def ping(ctx):
-    """Tells you the Ping of the Bot"""
     await ctx.send(f"Pong! {round(bot.latency * 1000)}ms")
 
 
-@bot.command()
-async def info(ctx):
-    await ctx.send("I'm A Discord Bot Designed To Help You Play Dungeons And Dragons Online\nCommands avaible:")
 
 @bot.event
 async def on_command_error(error, ctx):
     if isinstance(error, commands.MissingRequiredArgument):
         await bot.send_message(ctx.message.channel, 'Usage: `.r #d#` e.g. `.r 1d20`\nUse .help for more info.')
-    
+
+
 async def delete_messages(ctx, user_author):
     messages = await ctx.channel.history(limit=100).flatten()
 
@@ -68,7 +66,7 @@ async def r(ctx, roll : str):
             await ctx.send("I cant roll that many dice %s." % ctx.message.author.name)
             return
 
-        await delete_messages(ctx.message, ctx.message.author)
+        await delete_messages(ctx.message, ctx.message.author) #, ctx.message.author
         
         await ctx.send("Rolling %s d%s for %s" % (numDice, diceVal, ctx.message.author.name))
         rolls, limit = map(int, roll.split('d'))
@@ -97,57 +95,86 @@ async def spell(ctx, *spells):
         and out puts the spell in chat"""
     # cure wounds is 16 lines long # highest is 19 so far
     # if the spell is from a addition book it will say so after the spell name "A spell from  Xanathar's Guide To Everything"
-
-    spell_list = {
-        "fireball": "this spell is fireball",
-        }
-   
+    
     print("Starting Program...")
+    print(f"before manipulation {spells}")
     spell = (" ".join(spells)).lower()
     spell = spell.replace(" ", "-")
-    
-    if str(spell) in spell_list.keys():
-        print(spell_list[spell])
-    else:
-        spell_list[spell] = " "
-        url = 'https://www.dnd-spells.com/spell/' + spell
-        res = requests.get(url)
-        res.raise_for_status()
-        soup = BeautifulSoup(res.text, 'html.parser')
-        i = 0
-        for string in soup.find('div', class_='col-md-12').stripped_strings: # i can fix it using the len() and basing it off of that
-            if string == 'Remove the adds':
-                continue
-            if string == 'A':
-                break
-            i = i+1
-            if i == 1:
-                spell_list[spell] = spell_list[spell] + (f"**{string}**")
-                await ctx.send(f"**{string}**") # Bolds the spell name
-            elif i == 2:
-                spell_list[spell] = spell_list[spell] + (f"*{string}*")
-                await ctx.send(f"*{string}*") # Italics the spell school
-            elif i == 13:
-                spell_list[spell] = spell_list[spell] + (f"*{string}*")
-                await ctx.send(f"*{string}*")
-            elif i == 14:
-                spell_list[spell] = spell_list[spell] + (f"*{string}*")
-                await ctx.send(f"*{string}*")
-            elif i == 15:
-                await ctx.send(f"**{string}**")            
-            elif string == 'Level:':
-                await ctx.send(f"**{string}** ")
-            elif string == 'Casting time:':
-                await ctx.send(f"**{string}** ")
-            elif string == 'Range:':
-                await ctx.send(f"**{string}** ")
-            elif string == 'Components:':
-                await ctx.send(f"**{string}** ")
-            elif string == 'Duration:':
-                await ctx.send(f"**{string}** ")
-            else:
-                await ctx.send(f"{string} \n")
+    print(f"after manipulation {spells}")
+
+    url = 'https://www.dnd-spells.com/spell/' + spell
+    res = requests.get(url)
+    res.raise_for_status()
+    soup = BeautifulSoup(res.text, 'html.parser')
+    i = 0
+    for string in soup.find('div', class_='col-md-12').stripped_strings: # i can fix it using the len() and basing it off of that
+        if string == 'Remove the adds':
+            continue
+        if string == 'A':
+            break
+        i = i+1
+        if i == 1: 
+            await ctx.send(f"**{string}**") # Bolds the spell name
+        elif i == 2:
+            await ctx.send(f"*{string}*") # Italics the spell school
+        elif i == 13:
+            await ctx.send(f"*{string}*")
+        elif i == 14:
+            await ctx.send(f"*{string}*")
+        elif i == 15:
+            await ctx.send(f"**{string}**")            
+        elif string == 'Level:':
+            await ctx.send(f"**{string}** ")
+        elif string == 'Casting time:':
+            await ctx.send(f"**{string}** ")
+        elif string == 'Range:':
+            await ctx.send(f"**{string}** ")
+        elif string == 'Components:':
+            await ctx.send(f"**{string}** ")
+        elif string == 'Duration:':
+            await ctx.send(f"**{string}** ")
+        else:
+            await ctx.send(f"{string} \n")
     print("Ending Program...")
 
 
-bot.run('Nzk3ODg5MzM3OTIwNDU0Njc2.X_tCWg.GNg5tLqEwL47WvhgxuwEGLwHikw')
+@bot.command()
+async def combat(ctx):
+    tracker = {
+        "Nano": 0,
+        "Valar": 0,
+        "Tordalidar": 0,
+        "Dr. Chad Thundercock": 0,
+    }
+    await ctx.send("Roll for Initative!")
+    await ctx.send("Everyone type your roll")
+    await bot.wait_for('message', check=None)
+    await bot.wait_for('message', check=None)
+    await bot.wait_for('message', check=None)
+    '''
+    print("before wait 4")
+    await bot.wait_for('message', check=None)
+    '''
+    messages = await ctx.channel.history(limit=3).flatten()
+    for message in messages:
+        print(message)
+        if message.author.name == 'Nano':
+            tracker["Nano"] = int(message.content)
+        if message.author.name == "Valar":
+            tracker["Valar"] = int(message.content)
+        if message.author.name == "Tordalidar":
+            tracker["Tordalidar"] = int(message.content)
+        '''
+        if message.author.name == "Dr. Chad Thundercock":
+            tracker["Dr. Chad Thundercock"] = int(message.content)
+        '''
+    sorted_order = sorted(tracker.items(), key=lambda x: x[1])
+    for player in sorted_order:
+        print(player[0],player[1])
+        await ctx.send(str(player[0]) + ": " + str(player[1]))
+
+
+
+
+
+bot.run('Nzk3ODg5MzM3OTIwNDU0Njc2.X_tCWg.iTR0MJFfIGa6_K-l02G6NOF_6bI')
