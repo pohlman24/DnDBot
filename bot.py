@@ -139,42 +139,48 @@ async def spell(ctx, *spells):
 
 
 @bot.command()
-async def combat(ctx):
+async def combat(ctx, enemies):
     tracker = {
         "Nano": 0,
-        "Valar": 0,
-        "Tordalidar": 0,
+        "BlueMageJake": 0,
+        "taypoh": 0,
         "Dr. Chad Thundercock": 0,
     }
-    await ctx.send("Roll for Initative!")
-    await ctx.send("Everyone type your roll")
+    await ctx.send("Roll for Initative! \nEveryone type your roll")
     await bot.wait_for('message', check=None)
     await bot.wait_for('message', check=None)
     await bot.wait_for('message', check=None)
-    '''
-    print("before wait 4")
     await bot.wait_for('message', check=None)
-    '''
-    messages = await ctx.channel.history(limit=3).flatten()
+
+    print("before wait loop")
+    for i in range(int(enemies)):
+        print(i)
+        await bot.wait_for('message', check=None)
+        print('end of loop')
+
+    messages = await ctx.channel.history(limit=4 + enemies).flatten()
     for message in messages:
         print(message)
         if message.author.name == 'Nano':
             tracker["Nano"] = int(message.content)
-        if message.author.name == "Valar":
-            tracker["Valar"] = int(message.content)
-        if message.author.name == "Tordalidar":
-            tracker["Tordalidar"] = int(message.content)
-        '''
+        if message.author.name == "BlueMageJake":
+            tracker["BlueMageJake"] = int(message.content)
+        if message.author.name == "taypoh":
+            tracker["Taypoh"] = int(message.content)
         if message.author.name == "Dr. Chad Thundercock":
             tracker["Dr. Chad Thundercock"] = int(message.content)
-        '''
+
+        if message.author.name == "Tordalidar":
+            temp = message.content.split
+            tracker[temp[0]] = int(temp[1])
+
     sorted_order = sorted(tracker.items(), key=lambda x: x[1])
     for player in sorted_order:
         print(player[0],player[1])
         await ctx.send(str(player[0]) + ": " + str(player[1]))
 
 
-
+# to add. a group stealth check. ask players for stealth check and then auto calc the average
 
 
 bot.run('Nzk3ODg5MzM3OTIwNDU0Njc2.X_tCWg.iTR0MJFfIGa6_K-l02G6NOF_6bI')
