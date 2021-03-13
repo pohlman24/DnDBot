@@ -3,7 +3,6 @@ import random
 import requests
 import json
 import os
-import discord
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 
@@ -23,12 +22,6 @@ async def on_ready():
 @bot.command()
 async def ping(ctx):
     await ctx.send(f"Pong! {round(bot.latency * 1000)}ms")
-
-
-@bot.event
-async def on_command_error(error, ctx):
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send_message(ctx.message.channel, 'Usage: `.r #d#` e.g. `.r 1d20`\nUse .help for more info.')
 
 
 async def delete_messages(ctx, user_author):
@@ -202,8 +195,22 @@ async def combat(ctx, enemies):
         print(player[0], player[1])
         await ctx.send(str(player[0]) + ": " + str(player[1]))
 
-
-# to add. a group stealth check. ask players for stealth check and then auto calc the average
-
+'''
+@bot.command()
+async def new_character(ctx, *name):
+    await ctx.send("Sending info")
+    char_name = " ".join(name)
+    temp_character = Character(char_name)
+    Character.set_character()
+    temp_character.owner = f"{ctx.message.author.name}#{ctx.message.author.discriminator}"
+    temp_text = ""
+    temp_text += f"Name: {temp_character.name}\n"
+    temp_text += f"Health: {str(temp_character.hp)}\n"
+    temp_text += f"Armor class: {str(temp_character.ac)}\n"
+    temp_text += f"Speed: {str(temp_character.speed)}\n"
+    temp_text += f"Initiative modifier: {str(temp_character.initiative)}\n"
+    temp_text += f"Owner: {str(temp_character.owner)}"
+    await ctx.send(f"```{temp_text} ```")
+'''
 
 bot.run(TOKEN)
