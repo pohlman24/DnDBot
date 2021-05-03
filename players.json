@@ -1,0 +1,12 @@
+{
+    "DM": "Valar",
+    "players": [
+        "Nano",
+        "Valar"
+    ],
+
+    "combat": {
+        "Nano": 19,
+        "Valar": 22
+    }
+}

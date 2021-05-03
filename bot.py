@@ -3,6 +3,7 @@ import random
 import requests
 import json
 import os
+import operator
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 
@@ -22,6 +23,19 @@ async def on_ready():
 @bot.command()
 async def ping(ctx):
     await ctx.send(f"Pong! {round(bot.latency * 1000)}ms")
+
+
+def read_file(file):
+    with open(file, "r") as f:
+        data = json.load(f)
+    f.close()
+    return data
+
+
+def write_file(data):
+    with open("players.json", 'w') as t:
+        json.dump(data, t, indent=4)
+    t.close()
 
 
 async def delete_messages(ctx, user_author):
@@ -87,14 +101,13 @@ async def r(ctx, roll: str):
         print(e)
         return
 
-
+# add check to see if spell is real
+# add check to see if spell it ritual, if so it needs to be added to the name
 @bot.command()
 async def spell(ctx, *spells):
     """Lets user look up a spell
         and out puts the spell in chat"""
-
-    with open("spells.json") as f:
-        data = json.load(f)
+    data = read_file("spells.json")
 
     called_spell = " ".join(spells).lower()
     called_spell = called_spell.replace(" ", "-")
@@ -148,69 +161,131 @@ async def spell(ctx, *spells):
         new_list = "".join(temp_list)
         await ctx.send("```diff" + "\n" + new_list + "```")
         temp.append(my_dict)
-        with open("spells.json", 'w') as t:
-            json.dump(data, t, indent=4)
+        write_file(data)
 
-    print("Ending Command...")
-
-
+# need to account for if people roll the same number
+# need to move tracker to json file so that you can use future commands to it
+# Ex. update player names
 @bot.command()
-async def combat(ctx, enemies):
-    tracker = {
-        "Nano": 0,
-        "BlueMageJake": 0,
-        "taypoh": 0,
-        "Dr. Chad Thundercock": 0,
-    }
+async def combat(ctx, npc):
+    """Keeps track of Initiative order. Use the command followed by number of NPCs
+    """
+    data = read_file("players.json")
+# check if any players enter the same number
+# if they did then ask for their dex mods
+# compare dex mods and announce who goes first
+# update JSON file
+# if they are the same then ask to reroll
+# compare rerolls an announce who goes first
+# update JSON file.
     await ctx.send("Roll for Initiative! \nEveryone type your roll")
-    await bot.wait_for('message', check=None)
-    await bot.wait_for('message', check=None)
-    await bot.wait_for('message', check=None)
-    await bot.wait_for('message', check=None)
-
-    print("before wait loop")
-    for i in range(int(enemies)):
-        print(i)
+    for i in range(len(data["players"])):
         await bot.wait_for('message', check=None)
-        print('end of loop')
 
-    messages = await ctx.channel.history(limit=4 + enemies).flatten()
+    messages = await ctx.channel.history(limit=len(data["players"])).flatten()
     for message in messages:
-        print(message)
-        if message.author.name == 'Nano':
-            tracker["Nano"] = int(message.content)
-        if message.author.name == "BlueMageJake":
-            tracker["BlueMageJake"] = int(message.content)
-        if message.author.name == "taypoh":
-            tracker["Taypoh"] = int(message.content)
-        if message.author.name == "Dr. Chad Thundercock":
-            tracker["Dr. Chad Thundercock"] = int(message.content)
+        for player in data["combat"]:
+            if message.author.name == player:
+                data["combat"][player] = int(message.content)
+                write_file(data)
 
-        if message.author.name == "Tordalidar":
-            temp = message.content.split
-            tracker[temp[0]] = int(temp[1])
+    if int(npc) != 0:
+        await ctx.send("DM, enter any NPC names followed by their rolls\nExample: 'Wolf 16'")
+        for i in range(int(npc)):
+            await bot.wait_for('message', check=None)
+        messages = await ctx.channel.history(limit=int(npc)).flatten()
+        for message in messages:
+            print(message)
+            if message.author.name != data["DM"]:
+                continue
+            else:
+                temp = message.content.split()
+                data["combat"][temp[0]] = int(temp[1])
 
-    sorted_order = sorted(tracker.items(), key=lambda x: x[1])
+    # plan on making this its own function when I expand more on combat
+    data = read_file("players.json")
+    sorted_order = sorted(data["combat"].items(), key=operator.itemgetter(1), reverse=True)
+    temp_string = ""
     for player in sorted_order:
-        print(player[0], player[1])
-        await ctx.send(str(player[0]) + ": " + str(player[1]))
+        temp_string += f"{str(player[0])}: {str(player[1])}\n"
+    await ctx.send(f"```{temp_string}```")
 
-'''
+
 @bot.command()
-async def new_character(ctx, *name):
-    await ctx.send("Sending info")
-    char_name = " ".join(name)
-    temp_character = Character(char_name)
-    Character.set_character()
-    temp_character.owner = f"{ctx.message.author.name}#{ctx.message.author.discriminator}"
-    temp_text = ""
-    temp_text += f"Name: {temp_character.name}\n"
-    temp_text += f"Health: {str(temp_character.hp)}\n"
-    temp_text += f"Armor class: {str(temp_character.ac)}\n"
-    temp_text += f"Speed: {str(temp_character.speed)}\n"
-    temp_text += f"Initiative modifier: {str(temp_character.initiative)}\n"
-    temp_text += f"Owner: {str(temp_character.owner)}"
-    await ctx.send(f"```{temp_text} ```")
-'''
+async def endcombat(ctx):
+    """Ends the current combat session"""
+    data = read_file("players.json")
+    to_delete = set(data["combat"].keys()).difference(data["players"])
+    for combatant in to_delete:
+        del data["combat"][combatant]
+
+    write_file(data)
+
+
+@bot.command()
+async def setdm(ctx, player_name):
+    """Sets the DM player using the command followed by DM player name"""
+    data = read_file("players.json")
+    data["DM"] = player_name
+    write_file(data)
+
+
+@bot.command()
+async def getdm(ctx):
+    """Sets the DM player using the command followed by DM player name"""
+    data = read_file("players.json")
+    await ctx.send(data["DM"])
+
+
+@bot.command()
+async def getplayers(ctx):
+    """Displays list of current party"""
+    data = read_file("players.json")
+
+    temp_string = ""
+    for player in data["players"]:
+        temp_string += f"{player} \n"
+    await ctx.send(f"```{temp_string}```")
+
+
+@bot.command()
+async def addplayer(ctx, *player_name):
+    """Add a player to the party.
+    Use command followed by new player name"""
+    data = read_file("players.json")
+
+    player_name = " ".join(player_name).title()
+    if player_name not in data["players"]:
+        data["players"].append(str(player_name.title()))
+        write_file(data)
+
+        await ctx.send(f"New player list")
+        await getplayers(ctx)
+    else:
+        await ctx.send("That player is already in the party.")
+        await getplayers(ctx)
+
+@bot.command()
+async def removeplayer(ctx, player_name):
+    """Removes a player from the party.
+    Use command followed by new player name"""
+    data = read_file("players.json")
+    player_name = player_name.title()
+    try:
+        data["players"].remove(player_name)
+        write_file(data)
+
+        await ctx.send("New Player List")
+        await getplayers(ctx)
+    except:
+        await ctx.send("That player is not in the party.\nCurrent party list")
+        await getplayers(ctx)
+
+
+@bot.command()
+async def removeallplayers(ctx):
+    data = read_file("players.json")
+    data["players"].clear()
+    write_file(data)
 
 bot.run(TOKEN)

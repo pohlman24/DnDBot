@@ -15,7 +15,18 @@ class Character(commands.cog):
         self.ac = ac
         self.speed = speed
         self.initiative = initiative
-        self.spell_list = {}
+        self.spell_list = {
+            "0th": [],
+            "1st": [],
+            "2nd": [],
+            "3rd": [],
+            "4th": [],
+            "5th": [],
+            "6th": [],
+            "7th": [],
+            "8th": [],
+            "9th": [],
+        }
         self.stats = {}
         self.inventory = []
         self.owner = ""
@@ -60,6 +71,20 @@ class Character(commands.cog):
     def update_initiative(self):
         print("\nEnter new initiative modifier")
         self.initiative = input()
+
+    def update_spells(self, level):
+        self.spell_list[level].clear()
+        print("Enter New spells seperated by commas")
+        temp_string = input().split(",")
+        self.spell_list[level].append(temp_string)
+
+    def add_spell(self, level):
+        print("What spell do you want to add?")
+        temp_string = input()
+        if temp_string not in self.spell_list[level]:
+            self.spell_list[level].append(temp_string)
+        else:
+            print("That spell is already in prepared")
 
 
 def setup(bot):
